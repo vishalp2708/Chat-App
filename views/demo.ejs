@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat App Using Socket.IO and Node.js</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col justify-center items-center">
+    <h1 class="font-bold text-green-500 text-3xl text-center mt-5">
+        Chat Application
+    </h1>
+    <div class="w-full max-w-md mx-auto bg-white shadow-md rounded-lg overflow-hidden mt-5">
+        <h2 class="font-semibold text-xl text-center mt-5 mb-5 text-blue-600" id="logo">
+            Chat App using Socket.io
+        </h2>
+        <div id="messageArea" class="h-80 overflow-y-scroll p-4 bg-gray-50 border-t border-b border-gray-200">
+            <!-- Messages will appear here -->
+        </div>
+        <form class="flex flex-col items-center p-4" id="form">
+            <input class="border border-gray-400 rounded-md w-full p-2 mb-2" type="text" placeholder="Your Name" id="myname" required>
+            <input class="border border-gray-400 rounded-md w-full p-2 mb-2" type="text" placeholder="Type a message..." id="message" required>
+            <button class="bg-blue-500 w-full rounded-md p-2 text-white font-semibold hover:bg-blue-600 transition-colors mt-2">
+                Send
+            </button>
+        </form>
+    </div>
+</body>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    let socket = io();
+
+    let form = document.getElementById('form');
+    let myname = document.getElementById('myname');
+    let message = document.getElementById('message');
+    let messageArea = document.getElementById("messageArea");
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        if (message.value.trim()) {
+            const chatMessage = { username: myname.value, chat: message.value };
+
+            // Emit message to server
+            socket.emit('sendMessage', chatMessage);
+
+            // Clear message input after sending
+            message.value = "";
+        }
+    });
+
+    // Function to display messages
+    function displayMessage(username, chat, isSender = false) {
+        let messageContainer = document.createElement("div");
+        messageContainer.classList.add("flex", "mb-2");
+
+        // Apply alignment and styling based on sender or receiver
+        if (isSender) {
+            messageContainer.classList.add("justify-end"); // Align to the right for sender
+            messageContainer.innerHTML = `
+                <p class="bg-blue-500 text-white rounded-lg px-3 py-1 max-w-xs">${chat}</p>
+            `;
+        } else {
+            messageContainer.classList.add("justify-start"); // Align to the left for receiver
+            messageContainer.innerHTML = `
+                <p class="bg-gray-200 text-black rounded-lg px-3 py-1 max-w-xs">${username}: ${chat}</p>
+            `;
+        }
+
+        messageArea.appendChild(messageContainer);
+        messageArea.scrollTop = messageArea.scrollHeight; // Scroll to latest message
+    }
+
+    // Listen for incoming messages from the server
+    socket.on("receiveMessage", ({ username, chat }) => {
+        const isSender = username === myname.value;
+        displayMessage(username, chat, isSender); // Determine alignment based on sender or receiver
+    });
+</script>
+
+</html>
